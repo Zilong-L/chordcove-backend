@@ -21,7 +21,6 @@ const USER_TABLE = 'users'
     let { results } = await env['.DB'].prepare(
       `SELECT id FROM ${USER_TABLE}`
     ).all()
-    console.log(results)
     if (results && results.length > 0) {
       return new Response(
         JSON.stringify({ error: "Email already registered" }),

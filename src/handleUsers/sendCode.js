@@ -7,7 +7,7 @@ async function sendCode(request, env) {
     }
 
     // **Rate Limiting：限制 30 秒内只能请求一次**
-    const { success } = await env['email-rate-limiter'].limit({ key: email });
+    const { success } = await env.RATE_LIMITER.limit({ key: email });
     if (!success) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait 60s." }), {
         status: 429,

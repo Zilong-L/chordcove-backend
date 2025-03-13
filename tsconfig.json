@@ -1,0 +1,19 @@
+{
+    "include": ["src/**/*"],
+    "exclude": ["functions/**/*"],
+    "compilerOptions": {
+        "allowJs": true,
+        "outDir": "./dist",
+        "target": "esnext",
+        "module": "esnext",
+        "lib": [
+            "esnext"
+        ],
+        "types": ["./.wrangler/types/runtime"],
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true
+    }
+}

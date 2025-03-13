@@ -18,7 +18,6 @@ export async function login(request, env) {
     const { results } = await env.DB.prepare(
         `SELECT id, password FROM ${USER_TABLE} WHERE email = ?`
     ).bind(email).all();
-    console.log(results)
     if (!results || results.length === 0) {
         return new Response(
             JSON.stringify({ error: "Invalid email or password" }),
@@ -27,7 +26,6 @@ export async function login(request, env) {
     }
 
     const user = results[0];
-    console.log(user)
     // 验证密码
     const correct = await compare(password, user.password);
 

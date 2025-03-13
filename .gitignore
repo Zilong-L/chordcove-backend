@@ -172,3 +172,4 @@ dist
 .wrangler/
 
 wrangler.jsonc
+worker-configuration.d.ts
