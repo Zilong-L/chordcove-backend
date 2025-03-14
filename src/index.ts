@@ -71,6 +71,9 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const timestamp = new Date().toLocaleString("en-US", { timeZone: "Asia/Hong_Kong" });
+    console.log(`Timestamp before API call (Hong Kong Time): ${timestamp}`);
+
     const response = await handleRoutes(request, env);
     return withCORS(response, request, env.ALLOWED_ORIGINS);
   }

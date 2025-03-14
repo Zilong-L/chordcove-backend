@@ -12,7 +12,6 @@ export async function getRecentSheets(request: Request, env: Env): Promise<Respo
     const result = await env.DB.prepare(
       `SELECT * FROM sheets_metadata ORDER BY createdAt DESC LIMIT 10`
     ).all<SheetMetadata>();
-    console.log(JSON.stringify(result.results))
     return createSuccessResponse(result.results || []);
   } catch (error) {
     console.error("Error fetching recent sheets:", error);
