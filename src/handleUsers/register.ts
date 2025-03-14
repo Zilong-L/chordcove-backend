@@ -1,53 +1,54 @@
-import { hash } from 'bcryptjs';
-import { stableHash } from './utils';
-import { RegistrationRequest } from '../types/models';
+import { stableHash } from '../utils/stableHash';
 import { createErrorResponse, createSuccessResponse, parseRequestBody } from '../utils/response';
+import { sendCode } from '../utils/sendCode';
+import { validateRegistrationData } from './validation';
 
 const USER_TABLE = 'users';
+const REGISTRATION_EXPIRY = 60 * 10; // 10 minutes in seconds
 
 /**
- * Registers a new user with email verification
- * @param request - The incoming request
- * @param env - Environment variables
- * @returns Response indicating success or error
+ * Initiates user registration by sending verification code
  */
 export async function registerUser(request: Request, env: Env): Promise<Response> {
-  const data = await parseRequestBody<RegistrationRequest>(request);
+	const data = await parseRequestBody(request);
 
-  if (!data || !data.email || !data.password || !data.verificationCode) {
-    return createErrorResponse("Email, password and verification code are required", 400);
-  }
-  
-  const hashedEmail = await stableHash(data.email);
-  
-  // Get stored verification code from KV
-  const storedCode = await env.KV.get(hashedEmail);
-  if (!storedCode) {
-    return createErrorResponse("Verification code expired or not found", 400);
-  }
-  
-  if (storedCode !== data.verificationCode) {
-    return createErrorResponse("Verification code does not match", 401);
-  }
-  
-  // Code is correct, delete from KV to prevent reuse
-  await env.KV.delete(hashedEmail);
-  
-  // Check if email is already registered
-  const { results } = await env.DB.prepare(
-    `SELECT id FROM ${USER_TABLE} WHERE email = ?`
-  ).bind(data.email).all();
-  
-  if (results && results.length > 0) {
-    return createErrorResponse("Email already registered", 409);
-  }
-  
-  const hashedPassword = await hash(data.password, 10);
-  
-  // Insert new user into D1 database
-  await env.DB.prepare(
-    `INSERT INTO ${USER_TABLE} (email, password) VALUES (?, ?)`
-  ).bind(data.email, hashedPassword).run();
-  
-  return createSuccessResponse({ message: "User registered successfully" });
-} 
+	// Validate email only
+	const validationResult = validateRegistrationData(data);
+	if (!validationResult.success) {
+		return createErrorResponse(validationResult.error.errors[0].message, 400);
+	}
+
+	const { email } = validationResult.data;
+
+	// Rate Limiting: limit to one request per 30 seconds
+	const { success } = await env.RATE_LIMITER.limit({ key: email });
+	if (!success) {
+		return createErrorResponse('Rate limit exceeded. Please wait 60s.', 429);
+	}
+
+	// Check if email is already registered
+	const { results } = await env.DB.prepare(
+		`SELECT id FROM ${USER_TABLE} WHERE email = ?`
+	).bind(email).all();
+
+	if (results && results.length > 0) {
+		return createErrorResponse('Email already registered', 409);
+	}
+
+	const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+	const hashedEmail = await stableHash(email);
+
+	// Store verification code and email in KV
+	await env.KV.put(
+		hashedEmail,
+		JSON.stringify({
+			email,
+			code: verificationCode
+		}),
+		{ expirationTtl: REGISTRATION_EXPIRY }
+	);
+
+	await sendCode(email, verificationCode, env);
+
+	return createSuccessResponse({ message: 'Verification code sent to email' });
+}

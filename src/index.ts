@@ -1,14 +1,16 @@
-import { handleUpload } from "./sheetEditing/upload";
-import { sendCode } from "./handleUsers/sendCode";
-import { registerUser } from './handleUsers/registerDirect';
-import { login } from "./handleUsers/login";
 import { getRecentSheets } from "./getters/getRecentSheets";
 import { getSheetMetadata } from "./getters/getSheetMetadata";
-import { handleEdit } from "./sheetEditing/edit";
-import { withCORS } from './middleWare/cors';
-import { handleImageUpload } from "./sheetEditing/uploadImage";
-import { withAuth } from "./middleWare/auth";
 
+import { validateRegistration } from "./handleUsers/validateRegistration";
+import { registerUser } from './handleUsers/register';
+import { login } from "./handleUsers/login";
+
+import { handleEdit } from "./sheetEditing/edit";
+import { handleUpload } from "./sheetEditing/upload";
+import { handleImageUpload } from "./sheetEditing/uploadImage";
+
+import { withCORS } from './middleWare/cors';
+import { withAuth } from "./middleWare/auth";
 /**
  * Handle CORS preflight requests
  */
@@ -33,12 +35,12 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
     return handleOptions(request, env.ALLOWED_ORIGINS);
   }
 
-  // Authentication routes
-  if (url.pathname === '/api/send-verification-code' && request.method === "POST") {
-    return sendCode(request, env);
-  }
+
   if (url.pathname === '/api/register' && request.method === "POST") {
     return registerUser(request, env);
+  }
+  if (url.pathname === '/api/validate-registration' && request.method === "POST") {
+    return validateRegistration(request,env)
   }
   if (url.pathname === '/api/login' && request.method === "POST") {
     return login(request, env);
