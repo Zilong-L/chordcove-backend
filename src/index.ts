@@ -4,6 +4,7 @@ import { getSheetMetadata } from "./getters/getSheetMetadata";
 import { validateRegistration } from "./handleUsers/validateRegistration";
 import { registerUser } from './handleUsers/register';
 import { login } from "./handleUsers/login";
+import { handleRefreshToken } from "./handleUsers/refreshToken";
 
 import { handleEdit } from "./sheetEditing/edit";
 import { handleUpload } from "./sheetEditing/upload";
@@ -44,6 +45,9 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
   }
   if (url.pathname === '/api/login' && request.method === "POST") {
     return login(request, env);
+  }
+  if (url.pathname === '/api/refresh' && request.method === "POST") {
+    return handleRefreshToken(request, env);
   }
 
   // Sheet management routes

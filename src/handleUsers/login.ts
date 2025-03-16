@@ -73,6 +73,6 @@ export async function login(request: Request, env: Env): Promise<Response> {
 async function generateAccessToken(user: UserRecord, env: Env): Promise<string> {
   return await new SignJWT({ userId: user.id })
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("15m")
+    .setExpirationTime("10s")
     .sign(new TextEncoder().encode(env.JWT_SECRET));
 } 
