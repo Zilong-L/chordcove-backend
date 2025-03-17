@@ -1,5 +1,6 @@
 import { getRecentSheets } from "./getters/getRecentSheets";
 import { getSheetMetadata } from "./getters/getSheetMetadata";
+import { getAllArtists, getArtistSheets } from "./getters/getArtists";
 
 import { validateRegistration } from "./handleUsers/validateRegistration";
 import { registerUser } from './handleUsers/register';
@@ -68,6 +69,15 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
   
   if (url.pathname.startsWith("/api/get-sheet-metadata/") && request.method === "GET") {
     return getSheetMetadata(request, env);
+  }
+
+  // Artist routes
+  if (url.pathname === "/api/artists" && request.method === "GET") {
+    return getAllArtists(request, env);
+  }
+
+  if (url.pathname.startsWith("/api/artist-sheets/") && request.method === "GET") {
+    return getArtistSheets(request, env);
   }
 
   return Promise.resolve(new Response("Not Found", { status: 404 }));
