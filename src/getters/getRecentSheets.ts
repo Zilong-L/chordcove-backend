@@ -1,5 +1,5 @@
-import { SheetMetadata } from "../types/models";
-import { createSuccessResponse, createErrorResponse } from "../utils/response";
+import { SheetMetadata } from '../types/models';
+import { createSuccessResponse, createErrorResponse } from '../utils/response';
 
 /**
  * Retrieves the most recent sheets from the database
@@ -8,8 +8,9 @@ import { createSuccessResponse, createErrorResponse } from "../utils/response";
  * @returns Response with the most recent sheets
  */
 export async function getRecentSheets(request: Request, env: Env): Promise<Response> {
-  try {
-    const result = await env.DB.prepare(`
+	try {
+		const result = await env.DB.prepare(
+			`
       SELECT 
         sm.*,
         GROUP_CONCAT(
@@ -30,18 +31,20 @@ export async function getRecentSheets(request: Request, env: Env): Promise<Respo
       GROUP BY sm.id
       ORDER BY sm.createdAt DESC 
       LIMIT 10
-    `).all<SheetMetadata>();
+    `,
+		).all<SheetMetadata>();
 
-    // Parse the JSON strings from GROUP_CONCAT into arrays
-    const sheets = result.results?.map(sheet => ({
-      ...sheet,
-      singers: sheet.singers ? JSON.parse(`[${sheet.singers}]`.replace(/\]\[/g, ',')) : [],
-      composers: sheet.composers ? JSON.parse(`[${sheet.composers}]`.replace(/\]\[/g, ',')) : []
-    })) || [];
+		// Parse the JSON strings from GROUP_CONCAT into arrays
+		const sheets =
+			result.results?.map((sheet) => ({
+				...sheet,
+				singers: sheet.singers ? JSON.parse(`[${sheet.singers}]`.replace(/\]\[/g, ',')) : [],
+				composers: sheet.composers ? JSON.parse(`[${sheet.composers}]`.replace(/\]\[/g, ',')) : [],
+			})) || [];
 
-    return createSuccessResponse(sheets);
-  } catch (error) {
-    console.error("Error fetching recent sheets:", error);
-    return createErrorResponse("Failed to fetch recent sheets", 500);
-  }
-} 
+		return createSuccessResponse(sheets);
+	} catch (error) {
+		console.error('Error fetching recent sheets:', error);
+		return createErrorResponse('Failed to fetch recent sheets', 500);
+	}
+}

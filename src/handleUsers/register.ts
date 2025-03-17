@@ -27,9 +27,7 @@ export async function registerUser(request: Request, env: Env): Promise<Response
 	}
 
 	// Check if email is already registered
-	const { results } = await env.DB.prepare(
-		`SELECT id FROM ${USER_TABLE} WHERE email = ?`
-	).bind(email).all();
+	const { results } = await env.DB.prepare(`SELECT id FROM ${USER_TABLE} WHERE email = ?`).bind(email).all();
 
 	if (results && results.length > 0) {
 		return createErrorResponse('Email already registered', 409);
@@ -43,9 +41,9 @@ export async function registerUser(request: Request, env: Env): Promise<Response
 		hashedEmail,
 		JSON.stringify({
 			email,
-			code: verificationCode
+			code: verificationCode,
 		}),
-		{ expirationTtl: REGISTRATION_EXPIRY }
+		{ expirationTtl: REGISTRATION_EXPIRY },
 	);
 
 	await sendCode(email, verificationCode, env);

@@ -1,4 +1,4 @@
-import { ApiResponse } from "../types/models";
+import { ApiResponse } from '../types/models';
 
 /**
  * Create a success response
@@ -7,15 +7,15 @@ import { ApiResponse } from "../types/models";
  * @returns A Response object with the success data
  */
 export function createSuccessResponse<T>(data: T, message?: string): Response {
-  const response: ApiResponse<T> = {
-    success: true,
-    data,
-    message
-  };
-  
-  return new Response(JSON.stringify(response), {
-    headers: { "Content-Type": "application/json" }
-  });
+	const response: ApiResponse<T> = {
+		success: true,
+		data,
+		message,
+	};
+
+	return new Response(JSON.stringify(response), {
+		headers: { 'Content-Type': 'application/json' },
+	});
 }
 
 /**
@@ -25,15 +25,15 @@ export function createSuccessResponse<T>(data: T, message?: string): Response {
  * @returns A Response object with the error data
  */
 export function createErrorResponse(error: string, status: number = 400): Response {
-  const response: ApiResponse = {
-    success: false,
-    error
-  };
-  
-  return new Response(JSON.stringify(response), {
-    status,
-    headers: { "Content-Type": "application/json" }
-  });
+	const response: ApiResponse = {
+		success: false,
+		error,
+	};
+
+	return new Response(JSON.stringify(response), {
+		status,
+		headers: { 'Content-Type': 'application/json' },
+	});
 }
 
 /**
@@ -42,10 +42,10 @@ export function createErrorResponse(error: string, status: number = 400): Respon
  * @returns The parsed JSON data or null if parsing fails
  */
 export async function parseRequestBody<T>(request: Request): Promise<T | null> {
-  try {
-    return await request.json() as T;
-  } catch (error) {
-    console.error("Failed to parse request body:", error);
-    return null;
-  }
-} 
+	try {
+		return (await request.json()) as T;
+	} catch (error) {
+		console.error('Failed to parse request body:', error);
+		return null;
+	}
+}

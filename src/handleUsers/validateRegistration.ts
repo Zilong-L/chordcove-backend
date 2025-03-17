@@ -9,40 +9,38 @@ const USER_TABLE = 'users';
  * Validates the verification code and creates the user account with the provided password
  */
 export async function validateRegistration(request: Request, env: Env): Promise<Response> {
-  const data = await parseRequestBody(request);
+	const data = await parseRequestBody(request);
 
-  // Validate verification data including password requirements
-  const validationResult = validateVerificationData(data);
-  if (!validationResult.success) {
-    return createErrorResponse(validationResult.error.errors[0].message, 400);
-  }
+	// Validate verification data including password requirements
+	const validationResult = validateVerificationData(data);
+	if (!validationResult.success) {
+		return createErrorResponse(validationResult.error.errors[0].message, 400);
+	}
 
-  const { email, code:codeKV, password } = validationResult.data;
-  const hashedEmail = await stableHash(email);
-  
-  // Get stored registration data from KV
-  const storedData = await env.KV.get(hashedEmail);
+	const { email, code: codeKV, password } = validationResult.data;
+	const hashedEmail = await stableHash(email);
 
-  if (!storedData) {
-    return createErrorResponse("Registration expired or not found", 400);
-  }
+	// Get stored registration data from KV
+	const storedData = await env.KV.get(hashedEmail);
 
-  const { code } = JSON.parse(storedData);
+	if (!storedData) {
+		return createErrorResponse('Registration expired or not found', 400);
+	}
 
-  if (code !== codeKV) {
-    return createErrorResponse("Invalid verification code", 401);
-  }
+	const { code } = JSON.parse(storedData);
 
-  // Hash the password and create user account
-  const hashedPassword = await hash(password, 10);
+	if (code !== codeKV) {
+		return createErrorResponse('Invalid verification code', 401);
+	}
 
-  // Create user in database
-  await env.DB.prepare(
-    `INSERT INTO ${USER_TABLE} (email, password) VALUES (?, ?)`
-  ).bind(email, hashedPassword).run();
+	// Hash the password and create user account
+	const hashedPassword = await hash(password, 10);
 
-  // Clean up KV entry
-  await env.KV.delete(hashedEmail);
+	// Create user in database
+	await env.DB.prepare(`INSERT INTO ${USER_TABLE} (email, password) VALUES (?, ?)`).bind(email, hashedPassword).run();
 
-  return createSuccessResponse({ message: "User registered successfully" });
-} 
+	// Clean up KV entry
+	await env.KV.delete(hashedEmail);
+
+	return createSuccessResponse({ message: 'User registered successfully' });
+}

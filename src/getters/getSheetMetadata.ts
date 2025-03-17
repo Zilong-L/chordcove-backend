@@ -1,5 +1,5 @@
-import { SheetMetadata } from "../types/models";
-import { createSuccessResponse, createErrorResponse } from "../utils/response";
+import { SheetMetadata } from '../types/models';
+import { createSuccessResponse, createErrorResponse } from '../utils/response';
 
 /**
  * Retrieves metadata for a specific sheet
@@ -8,14 +8,15 @@ import { createSuccessResponse, createErrorResponse } from "../utils/response";
  * @returns Response with the sheet metadata
  */
 export async function getSheetMetadata(request: Request, env: Env): Promise<Response> {
-  try {
-    const id = request.url.split("/").pop();
-    
-    if (!id) {
-      return createErrorResponse("Sheet ID is required", 400);
-    }
-    
-    const { results } = await env.DB.prepare(`
+	try {
+		const id = request.url.split('/').pop();
+
+		if (!id) {
+			return createErrorResponse('Sheet ID is required', 400);
+		}
+
+		const { results } = await env.DB.prepare(
+			`
       SELECT 
         sm.*,
         GROUP_CONCAT(
@@ -35,22 +36,25 @@ export async function getSheetMetadata(request: Request, env: Env): Promise<Resp
       LEFT JOIN artists a ON sa.artist_id = a.id
       WHERE sm.id = ?
       GROUP BY sm.id
-    `).bind(id).all<SheetMetadata>();
+    `,
+		)
+			.bind(id)
+			.all<SheetMetadata>();
 
-    if (!results || results.length === 0) {
-      return createErrorResponse("Sheet not found", 404);
-    }
+		if (!results || results.length === 0) {
+			return createErrorResponse('Sheet not found', 404);
+		}
 
-    // Parse the JSON strings from GROUP_CONCAT into arrays
-    const sheet = {
-      ...results[0],
-      singers: results[0].singers ? JSON.parse(`[${results[0].singers}]`.replace(/\]\[/g, ',')) : [],
-      composers: results[0].composers ? JSON.parse(`[${results[0].composers}]`.replace(/\]\[/g, ',')) : []
-    };
+		// Parse the JSON strings from GROUP_CONCAT into arrays
+		const sheet = {
+			...results[0],
+			singers: results[0].singers ? JSON.parse(`[${results[0].singers}]`.replace(/\]\[/g, ',')) : [],
+			composers: results[0].composers ? JSON.parse(`[${results[0].composers}]`.replace(/\]\[/g, ',')) : [],
+		};
 
-    return createSuccessResponse(sheet);
-  } catch (error) {
-    console.error("Error fetching sheet metadata:", error);
-    return createErrorResponse("Failed to fetch sheet metadata", 500);
-  }
-} 
+		return createSuccessResponse(sheet);
+	} catch (error) {
+		console.error('Error fetching sheet metadata:', error);
+		return createErrorResponse('Failed to fetch sheet metadata', 500);
+	}
+}
