@@ -13,12 +13,20 @@ export interface User {
  */
 export interface SheetMetadata {
   id: string;
-  composer: string;
-  singer: string;
   uploaderId: number;
   title: string;
   createdAt: string;
   coverImage: string;
+  singers?: Array<{
+    id: number;
+    name: string;
+    role: string;
+  }>;
+  composers?: Array<{
+    id: number;
+    name: string;
+    role: string;
+  }>;
 }
 
 /**

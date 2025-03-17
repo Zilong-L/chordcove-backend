@@ -6,7 +6,11 @@ interface ScoreData {
 }
 
 interface UploadRequest {
-  sheetMetadata: SheetUploadRequest & { id?: string };
+  sheetMetadata: SheetUploadRequest & { 
+    id?: string;
+    singers?: Array<{ name: string }>;
+    composers?: Array<{ name: string }>;
+  };
   scoreData: ScoreData;
 }
 
@@ -62,20 +66,48 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
 
     // Insert metadata into database
     await env.DB.prepare(
-      "INSERT INTO sheets_metadata (id, title, composer, singer, uploaderId, createdAt, coverImage) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)"
-    ).bind(
-      songId, 
-      sheetMetadata.title, 
-      sheetMetadata.composer, 
-      sheetMetadata.singer, 
-      request.userId,
-      imageUrl
-    ).run();
+      "INSERT INTO sheets_metadata (id, title, uploaderId, createdAt, coverImage) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)"
+    ).bind(songId, sheetMetadata.title, request.userId, imageUrl).run();
 
     // Store sheet data in R2
     await env.R2.put(`sheets/${songId}.json`, JSON.stringify(scoreData), {
       httpMetadata: { contentType: "application/json" },
     });
+
+    // Handle artists (singers and composers)
+    const artists = [
+      ...(sheetMetadata.singers || []).map(singer => ({ name: singer.name, role: 'SINGER' })),
+      ...(sheetMetadata.composers || []).map(composer => ({ name: composer.name, role: 'COMPOSER' }))
+    ];
+
+    for (const artist of artists) {
+      // Try to find existing artist by name
+      const existingArtist = await env.DB.prepare(
+        "SELECT id FROM artists WHERE name = ?"
+      ).bind(artist.name).first<{ id: number }>();
+
+      let artistId: number;
+
+      if (existingArtist) {
+        // Use existing artist
+        artistId = existingArtist.id;
+      } else {
+        // Create new artist
+        const result = await env.DB.prepare(
+          "INSERT INTO artists (name) VALUES (?) RETURNING id"
+        ).bind(artist.name).first<{ id: number }>();
+        
+        if (!result) {
+          continue;
+        }
+        artistId = result.id;
+      }
+
+      // Create the relationship in sheet_artists
+      await env.DB.prepare(
+        "INSERT INTO sheet_artists (sheet_id, artist_id, role) VALUES (?, ?, ?)"
+      ).bind(songId, artistId, artist.role).run();
+    }
 
     return createSuccessResponse({ id: songId });
   } catch (error) {
