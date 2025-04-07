@@ -7,6 +7,7 @@ interface EditRequest {
 		coverImage?: string;
 		singers?: Array<{ name: string }>;
 		composers?: Array<{ name: string }>;
+		bvid?: string;
 	};
 	scoreData: {
 		[key: string]: unknown;
@@ -82,8 +83,11 @@ export async function handleEdit(request: Request, env: Env): Promise<Response> 
 
 		// Update sheet metadata in database
 		if (sheetMetadata.title) {
-			await env.DB.prepare('UPDATE sheets_metadata SET title = ? WHERE id = ?').bind(sheetMetadata.title, songId).run();
+			await env.DB.prepare('UPDATE sheets_metadata SET title = ?, bvid = ? WHERE id = ?')
+				.bind(sheetMetadata.title, sheetMetadata.bvid, songId)
+				.run();
 		}
+		console.log(sheetMetadata.bvid);
 
 		// Handle artists update
 		if (sheetMetadata.singers || sheetMetadata.composers) {
