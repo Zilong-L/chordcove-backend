@@ -10,6 +10,7 @@ import { handleRefreshToken } from './handleUsers/refreshToken';
 import { handleEdit } from './sheetEditing/edit';
 import { handleUpload } from './sheetEditing/upload';
 import { handleImageUpload } from './sheetEditing/uploadImage';
+import { handleLike, handleUnlike, checkLikeStatus } from './sheetEditing/likes';
 
 import { withCORS } from './middleWare/cors';
 import { withAuth } from './middleWare/auth';
@@ -21,7 +22,7 @@ async function handleOptions(request: Request, allowedOrigins: string[]): Promis
 	console.log(requestOrigin);
 	const headers = {
 		'Access-Control-Allow-Origin': allowedOrigins.includes(requestOrigin || '') ? requestOrigin || '' : 'null',
-		'Access-Control-Allow-Methods': 'POST,OPTIONS,GET,PUT',
+		'Access-Control-Allow-Methods': 'POST,OPTIONS,GET,PUT,DELETE',
 		'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 	};
 	return new Response(null, { status: 204, headers });
@@ -77,6 +78,20 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
 
 	if (url.pathname.startsWith('/api/artist-sheets/') && request.method === 'GET') {
 		return getArtistSheets(request, env);
+	}
+
+	// Sheet like routes
+	if (url.pathname.match(/^\/api\/sheets\/[^/]+\/like$/) && request.method === 'POST') {
+		console.log('here');
+		return withAuth(request, env, handleLike);
+	}
+
+	if (url.pathname.match(/^\/api\/sheets\/[^/]+\/like$/) && request.method === 'DELETE') {
+		return withAuth(request, env, handleUnlike);
+	}
+
+	if (url.pathname.match(/^\/api\/sheets\/[^/]+\/like-status$/) && request.method === 'GET') {
+		return withAuth(request, env, checkLikeStatus);
 	}
 
 	return Promise.resolve(new Response('Not Found', { status: 404 }));
