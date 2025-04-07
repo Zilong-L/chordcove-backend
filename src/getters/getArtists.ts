@@ -86,18 +86,18 @@ export async function getArtistSheets(request: Request, env: Env): Promise<Respo
       SELECT 
         sm.*,
         sa.role,
-        GROUP_CONCAT(
-          CASE 
-            WHEN sa2.role = 'SINGER' THEN json_object('id', a2.id, 'name', a2.name, 'role', sa2.role)
-            ELSE NULL 
-          END
-        ) as singers,
-        GROUP_CONCAT(
-          CASE 
-            WHEN sa2.role = 'COMPOSER' THEN json_object('id', a2.id, 'name', a2.name, 'role', sa2.role)
-            ELSE NULL 
-          END
-        ) as composers
+        GROUP_CONCAT(DISTINCT
+		CASE 
+			WHEN sa2.role = 'SINGER' THEN json_object('id', a2.id, 'name', a2.name, 'role', sa2.role)
+			ELSE NULL 
+		END
+		) as singers,
+		GROUP_CONCAT(DISTINCT
+		CASE 
+			WHEN sa2.role = 'COMPOSER' THEN json_object('id', a2.id, 'name', a2.name, 'role', sa2.role)
+			ELSE NULL 
+		END
+		) as composers
       FROM sheets_metadata sm
       JOIN sheet_artists sa ON sm.id = sa.sheet_id
       LEFT JOIN sheet_artists sa2 ON sm.id = sa2.sheet_id
@@ -109,7 +109,7 @@ export async function getArtistSheets(request: Request, env: Env): Promise<Respo
 		)
 			.bind(artistId)
 			.all();
-
+		console.log(sheetResults[0].singers);
 		// Parse the JSON strings from GROUP_CONCAT into arrays
 		const sheets =
 			sheetResults?.map((sheet) => ({
