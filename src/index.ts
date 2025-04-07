@@ -1,6 +1,7 @@
 import { getRecentSheets } from './getters/getRecentSheets';
 import { getSheetMetadata } from './getters/getSheetMetadata';
 import { getAllArtists, getArtistSheets } from './getters/getArtists';
+import { handleGetUserSheets } from './getters/getUserSheets';
 
 import { validateRegistration } from './handleUsers/validateRegistration';
 import { registerUser } from './handleUsers/register';
@@ -97,6 +98,11 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
 	// Get all liked sheets for the user
 	if (url.pathname === '/api/likes/sheets' && request.method === 'GET') {
 		return withAuth(request, env, handleGetLikedSheets);
+	}
+
+	// Get all sheets uploaded by the user
+	if (url.pathname === '/api/user/sheets' && request.method === 'GET') {
+		return withAuth(request, env, handleGetUserSheets);
 	}
 
 	return Promise.resolve(new Response('Not Found', { status: 404 }));
