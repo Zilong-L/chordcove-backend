@@ -10,7 +10,7 @@ import { handleRefreshToken } from './handleUsers/refreshToken';
 import { handleEdit } from './sheetEditing/edit';
 import { handleUpload } from './sheetEditing/upload';
 import { handleImageUpload } from './sheetEditing/uploadImage';
-import { handleLike, handleUnlike, checkLikeStatus } from './sheetEditing/likes';
+import { handleLike, handleUnlike, checkLikeStatus, handleGetLikedSheets } from './sheetEditing/likes';
 
 import { withCORS } from './middleWare/cors';
 import { withAuth } from './middleWare/auth';
@@ -92,6 +92,11 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
 
 	if (url.pathname.match(/^\/api\/sheets\/[^/]+\/like-status$/) && request.method === 'GET') {
 		return withAuth(request, env, checkLikeStatus);
+	}
+
+	// Get all liked sheets for the user
+	if (url.pathname === '/api/likes/sheets' && request.method === 'GET') {
+		return withAuth(request, env, handleGetLikedSheets);
 	}
 
 	return Promise.resolve(new Response('Not Found', { status: 404 }));
