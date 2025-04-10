@@ -1,4 +1,5 @@
 import { Env } from '../types/worker-configuration';
+import { createErrorResponse, createSuccessResponse } from '../utils/response';
 export async function handleImageUpload(request: Request, env: Env) {
 	if (request.method !== 'POST') {
 		return new Response(JSON.stringify({ success: false, error: 'Method Not Allowed' }), { status: 405 });
@@ -12,12 +13,18 @@ export async function handleImageUpload(request: Request, env: Env) {
 
 		const requestFormData = await request.formData();
 		const file = requestFormData.get('file') as File | null;
+		const sha256 = requestFormData.get('sha256') as string | null;
+
 		if (!file) {
 			return new Response(JSON.stringify({ success: false, error: 'No image found' }), { status: 400 });
 		}
-		const extension = file.name.split('.').pop()?.toLowerCase(); // No longer needed as we convert to webp
-		// Keep original validation if needed, but the target is now webp
-		if (!extension || !['png', 'jpg', 'jpeg', 'gif'].includes(extension)) {
+
+		if (!sha256 || !/^[a-f0-9]{64}$/.test(sha256)) {
+			return new Response(JSON.stringify({ success: false, error: 'Invalid SHA-256 hash' }), { status: 400 });
+		}
+
+		const extension = file.name.split('.').pop()?.toLowerCase();
+		if (!extension || !['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) {
 			return new Response(JSON.stringify({ success: false, error: 'Invalid image format' }), { status: 400 });
 		}
 
@@ -30,7 +37,7 @@ export async function handleImageUpload(request: Request, env: Env) {
 		// Add quality if you want to control it from here, otherwise uses default
 		// imageFormData.append('quality', '80');
 		console.log(env.IMAGE_API_TOKEN);
-		// 3. Call external WebP conversion serviWce
+		// 3. Call external WebP conversion service
 		const webpResponse = await fetch(`${env.IMAGE_ENDPOINT}/webp`, {
 			method: 'POST',
 			headers: {
@@ -52,9 +59,8 @@ export async function handleImageUpload(request: Request, env: Env) {
 		// 4. Get WebP image buffer
 		const webpBuffer = await webpResponse.arrayBuffer();
 
-		// 5. Generate UUID and R2 key with .webp extension
-		const imageUUID = crypto.randomUUID();
-		const imageID = `tmp/images/${imageUUID}.webp`; // Use .webp extension
+		// 5. Use SHA-256 for the filename
+		const imageID = `tmp/images/${sha256}.webp`;
 
 		// 6. Upload minified image to R2
 		await env.R2.put(imageID, webpBuffer, {
@@ -62,18 +68,13 @@ export async function handleImageUpload(request: Request, env: Env) {
 		});
 
 		// 7. Return R2 URL
-		return new Response(
-			JSON.stringify({
-				success: true,
-				// Construct URL using the R2 endpoint and the new image ID
-				data: { coverImage: `${env.R2_ENDPOINT}/${imageID}` },
-			}),
-			{ status: 200 },
-		);
+		return createSuccessResponse({
+			data: { coverImage: `${env.R2_ENDPOINT}/${imageID}` },
+		});
 	} catch (error) {
 		console.error('Image Upload Error:', error);
 		// Provide more specific error if possible
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-		return new Response(JSON.stringify({ success: false, error: `Image upload failed: ${errorMessage}` }), { status: 500 });
+		return createErrorResponse(`Image upload failed: ${errorMessage}`, 500);
 	}
 }

@@ -12,6 +12,7 @@ import { handleEdit } from './sheetEditing/edit';
 import { handleUpload } from './sheetEditing/upload';
 import { handleImageUpload } from './sheetEditing/uploadImage';
 import { handleLike, handleUnlike, checkLikeStatus, handleGetLikedSheets } from './sheetEditing/likes';
+import { handleSave } from './sheetEditing/save';
 
 import { withCORS } from './middleWare/cors';
 import { withAuth } from './middleWare/auth';
@@ -56,11 +57,14 @@ function handleRoutes(request: Request, env: Env): Promise<Response> {
 	if (url.pathname === '/api/upload-image' && request.method === 'POST') {
 		return withAuth(request, env, handleImageUpload);
 	}
-	if (url.pathname === '/api/upload' && request.method === 'POST') {
-		return withAuth(request, env, handleUpload);
-	}
-	if (url.pathname === '/api/edit' && request.method === 'PUT') {
-		return withAuth(request, env, handleEdit);
+	// if (url.pathname === '/api/upload' && request.method === 'POST') {
+	// 	return withAuth(request, env, handleUpload);
+	// }
+	// if (url.pathname === '/api/edit' && request.method === 'PUT') {
+	// 	return withAuth(request, env, handleEdit);
+	// }
+	if (url.pathname === '/api/sheets' && request.method === 'PUT') {
+		return withAuth(request, env, handleSave);
 	}
 
 	// Public sheet retrieval routes

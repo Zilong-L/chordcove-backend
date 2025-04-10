@@ -37,7 +37,6 @@ export async function handleEdit(request: Request, env: Env): Promise<Response> 
 
 		// Check if sheet exists
 		const sheet = await env.DB.prepare('SELECT * FROM sheets_metadata WHERE id = ?').bind(songId).first();
-
 		if (!sheet) {
 			return createErrorResponse('Sheet not found', 404);
 		}
@@ -55,6 +54,7 @@ export async function handleEdit(request: Request, env: Env): Promise<Response> 
 		let uploadImageError = false;
 
 		// Handle cover image update if provided
+		const now = Date.now();
 		if (sheetMetadata.coverImage && sheetMetadata.coverImage !== sheet.coverImage) {
 			try {
 				const url = sheetMetadata.coverImage;
@@ -74,7 +74,7 @@ export async function handleEdit(request: Request, env: Env): Promise<Response> 
 				await env.R2.put(key, object.body);
 
 				const newURL = `${env.R2_ENDPOINT}/${key}`;
-				await env.DB.prepare('UPDATE sheets_metadata SET coverImage = ? WHERE id = ?').bind(newURL, songId).run();
+				await env.DB.prepare('UPDATE sheets_metadata SET coverImage = ?, lastModified = ? WHERE id = ?').bind(newURL, now, songId).run();
 			} catch (e) {
 				uploadImageError = true;
 				console.error('Error updating cover image:', e);
@@ -83,54 +83,17 @@ export async function handleEdit(request: Request, env: Env): Promise<Response> 
 
 		// Update sheet metadata in database
 		if (sheetMetadata.title) {
-			await env.DB.prepare('UPDATE sheets_metadata SET title = ?, bvid = ? WHERE id = ?')
-				.bind(sheetMetadata.title, sheetMetadata.bvid, songId)
+			await env.DB.prepare('UPDATE sheets_metadata SET title = ?, bvid = ?, lastModified = ? WHERE id = ?')
+				.bind(sheetMetadata.title, sheetMetadata.bvid, now, songId)
 				.run();
-		}
-		console.log(sheetMetadata.bvid);
-
-		// Handle artists update
-		if (sheetMetadata.singers || sheetMetadata.composers) {
-			// Remove all existing relationships
-			await env.DB.prepare('DELETE FROM sheet_artists WHERE sheet_id = ?').bind(songId).run();
-
-			// Add new relationships
-			const artists = [
-				...(sheetMetadata.singers || []).map((singer) => ({ name: singer.name, role: 'SINGER' })),
-				...(sheetMetadata.composers || []).map((composer) => ({ name: composer.name, role: 'COMPOSER' })),
-			];
-
-			for (const artist of artists) {
-				// Try to find existing artist by name
-				const existingArtist = await env.DB.prepare('SELECT id FROM artists WHERE name = ?').bind(artist.name).first<{ id: number }>();
-
-				let artistId: number;
-
-				if (existingArtist) {
-					// Use existing artist
-					artistId = existingArtist.id;
-				} else {
-					// Create new artist
-					const result = await env.DB.prepare('INSERT INTO artists (name) VALUES (?) RETURNING id')
-						.bind(artist.name)
-						.first<{ id: number }>();
-
-					if (!result) {
-						continue;
-					}
-					artistId = result.id;
-				}
-
-				// Create the relationship in sheet_artists
-				await env.DB.prepare('INSERT INTO sheet_artists (sheet_id, artist_id, role) VALUES (?, ?, ?)')
-					.bind(songId, artistId, artist.role)
-					.run();
-			}
 		}
 
 		return createSuccessResponse({
 			id: songId,
 			imageUpdateStatus: uploadImageError ? 'failed' : 'success',
+			coverImage: sheetMetadata.coverImage || sheet.coverImage,
+			createdAt: sheet.createdAt,
+			lastModified: now,
 		});
 	} catch (error) {
 		console.error('Edit Error:', error);

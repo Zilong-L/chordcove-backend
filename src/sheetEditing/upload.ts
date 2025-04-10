@@ -64,11 +64,13 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
 			imageUrl = `${env.R2_ENDPOINT}/images/${songId}.png`;
 		}
 
+		const now = Date.now();
+
 		// Insert metadata into database
 		await env.DB.prepare(
-			'INSERT INTO sheets_metadata (id, title, uploaderId, createdAt, coverImage) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)',
+			'INSERT INTO sheets_metadata (id, title, uploaderId, coverImage, createdAt, lastModified) VALUES (?, ?, ?, ?, ?, ?)',
 		)
-			.bind(songId, sheetMetadata.title, request.userId, imageUrl)
+			.bind(songId, sheetMetadata.title, request.userId, imageUrl, now, now)
 			.run();
 
 		// Store sheet data in R2
@@ -107,7 +109,12 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
 				.run();
 		}
 
-		return createSuccessResponse({ id: songId });
+		return createSuccessResponse({
+			id: songId,
+			coverImage: imageUrl,
+			createdAt: now,
+			lastModified: now,
+		});
 	} catch (error) {
 		console.error('Upload Error:', error);
 		return createErrorResponse('Upload failed', 500);
