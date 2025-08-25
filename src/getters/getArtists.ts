@@ -109,7 +109,7 @@ export async function getArtistSheets(request: Request, env: Env): Promise<Respo
 		)
 			.bind(artistId)
 			.all();
-		console.log(sheetResults[0].singers);
+		console.log(sheetResults?.[0]?.singers);
 		// Parse the JSON strings from GROUP_CONCAT into arrays
 		const sheets =
 			sheetResults?.map((sheet) => ({

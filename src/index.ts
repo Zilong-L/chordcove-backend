@@ -8,8 +8,6 @@ import { registerUser } from './handleUsers/register';
 import { login } from './handleUsers/login';
 import { handleRefreshToken } from './handleUsers/refreshToken';
 
-import { handleEdit } from './sheetEditing/edit';
-import { handleUpload } from './sheetEditing/upload';
 import { handleImageUpload } from './sheetEditing/uploadImage';
 import { handleLike, handleUnlike, checkLikeStatus, handleGetLikedSheets } from './sheetEditing/likes';
 import { handleSave } from './sheetEditing/save';

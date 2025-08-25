@@ -9,7 +9,6 @@
         "lib": [
             "esnext"
         ],
-        "types": ["./.wrangler/types/runtime"],
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "moduleResolution": "node",

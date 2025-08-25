@@ -1,5 +1,4 @@
 import { verifyJWT } from '../utils/auth/verifyJWT';
-
 // Extend the Request interface to include userId
 declare global {
 	interface Request {
