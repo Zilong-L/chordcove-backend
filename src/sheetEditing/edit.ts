@@ -8,6 +8,7 @@ interface EditRequest {
 		singers?: Array<{ name: string }>;
 		composers?: Array<{ name: string }>;
 		bvid?: string;
+		sheetType?: 'simple' | 'full';
 	};
 	scoreData: {
 		[key: string]: unknown;
@@ -81,10 +82,28 @@ export async function handleEdit(request: Request, env: Env): Promise<Response> 
 			}
 		}
 
-		// Update sheet metadata in database
-		if (sheetMetadata.title) {
-			await env.DB.prepare('UPDATE sheets_metadata SET title = ?, bvid = ?, lastModified = ? WHERE id = ?')
-				.bind(sheetMetadata.title, sheetMetadata.bvid, now, songId)
+
+		// Update sheet metadata in database (conditionally update provided fields)
+		const updates: string[] = [];
+		const bindings: any[] = [];
+		if (typeof sheetMetadata.title !== 'undefined') {
+			updates.push('title = ?');
+			bindings.push(sheetMetadata.title);
+		}
+		if (typeof sheetMetadata.bvid !== 'undefined') {
+			updates.push('bvid = ?');
+			bindings.push(sheetMetadata.bvid);
+		}
+		if (typeof sheetMetadata.sheetType !== 'undefined') {
+			updates.push('sheetType = ?');
+			bindings.push(sheetMetadata.sheetType);
+		}
+
+		if (updates.length > 0) {
+			updates.push('lastModified = ?');
+			bindings.push(now);
+			await env.DB.prepare(`UPDATE sheets_metadata SET ${updates.join(', ')} WHERE id = ?`)
+				.bind(...bindings, songId)
 				.run();
 		}
 

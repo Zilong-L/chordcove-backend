@@ -16,7 +16,7 @@ export async function handleGetUserSheets(request: Request, env: Env): Promise<R
 		// Fetch sheet metadata for sheets uploaded by the user, including artist details
 		const query = `
             SELECT 
-                sm.id, sm.title, sm.createdAt, sm.coverImage, sm.uploaderId,
+                sm.id, sm.title, sm.sheetType, sm.createdAt, sm.coverImage, sm.uploaderId,
                 GROUP_CONCAT(
                     CASE 
                         WHEN sa.role = 'SINGER' THEN json_object('id', a.id, 'name', a.name, 'role', sa.role)

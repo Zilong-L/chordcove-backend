@@ -6,6 +6,7 @@ import { handleEdit } from './edit';
 interface SaveSheetRequest {
 	id?: string;
 	title: string;
+	sheetType: 'simple' | 'full';
 	singers?: Array<{ name: string }>;
 	composers?: Array<{ name: string }>;
 	coverImage?: string;
@@ -28,21 +29,22 @@ export async function handleSave(request: Request, env: Env): Promise<Response> 
 	try {
 		const body = await parseRequestBody<SaveSheetRequest>(request);
 
-		if (!body || !body.title || body.content === undefined) {
+		if (!body || !body.title || body.content === undefined || !body.sheetType) {
 			return createErrorResponse('Invalid request body', 400);
 		}
 
 		// Transform the request to match the expected format for upload/edit
-		const transformedRequest = {
-			sheetMetadata: {
-				id: body.id,
-				title: body.title,
-				coverImage: body.coverImage,
-				singers: body.singers,
-				composers: body.composers,
-				bvid: body.bvid,
-			},
-			scoreData: {
+			const transformedRequest = {
+				sheetMetadata: {
+					id: body.id,
+					title: body.title,
+					sheetType: body.sheetType,
+					coverImage: body.coverImage,
+					singers: body.singers,
+					composers: body.composers,
+					bvid: body.bvid,
+				},
+				scoreData: {
 				key: body.key,
 				tempo: body.tempo,
 				timeSignature: body.timeSignature,

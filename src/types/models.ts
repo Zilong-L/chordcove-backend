@@ -15,6 +15,7 @@ export interface SheetMetadata {
 	id: string;
 	uploaderId: number;
 	title: string;
+	sheetType: 'simple' | 'full';
 	createdAt: string;
 	coverImage: string;
 	singers?: Array<{
@@ -82,10 +83,8 @@ export interface RegistrationRequest {
  */
 export interface SheetUploadRequest {
 	title: string;
-	composer: string;
-	singer: string;
-	sheetContent: string;
 	coverImage?: string;
+	sheetType: 'simple' | 'full';
 }
 
 /**

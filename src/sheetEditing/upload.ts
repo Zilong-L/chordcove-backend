@@ -10,6 +10,7 @@ interface UploadRequest {
 		id?: string;
 		singers?: Array<{ name: string }>;
 		composers?: Array<{ name: string }>;
+		sheetType: 'simple' | 'full';
 	};
 	scoreData: ScoreData;
 }
@@ -66,11 +67,12 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
 
 		const now = Date.now();
 
-		// Insert metadata into database
+
+		// Insert metadata into database (including sheetType)
 		await env.DB.prepare(
-			'INSERT INTO sheets_metadata (id, title, uploaderId, coverImage, createdAt, lastModified) VALUES (?, ?, ?, ?, ?, ?)',
+			'INSERT INTO sheets_metadata (id, title, sheetType, uploaderId, coverImage, createdAt, lastModified) VALUES (?, ?, ?, ?, ?, ?, ?)'
 		)
-			.bind(songId, sheetMetadata.title, request.userId, imageUrl, now, now)
+			.bind(songId, sheetMetadata.title, sheetMetadata.sheetType, request.userId, imageUrl, now, now)
 			.run();
 
 		// Store sheet data in R2
